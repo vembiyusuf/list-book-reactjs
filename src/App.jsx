@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import NoteForm from './components/NoteForm';
 import NoteItem from './components/NoteItem';
-import getInitialData from './utils/data';
 import PropTypes from 'prop-types';
 
 function App() {
@@ -9,16 +8,24 @@ function App() {
   const [archivedNotes, setArchivedNotes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Mengambil data awal dari getInitialData saat komponen pertama kali dimuat
+  // Load data from localStorage when the component mounts
   useEffect(() => {
-    const initialData = getInitialData();
-    setNotes(initialData);
+    const storedNotes = JSON.parse(localStorage.getItem('notes')) || [];
+    const storedArchivedNotes = JSON.parse(localStorage.getItem('archivedNotes')) || [];
+    setNotes(storedNotes);
+    setArchivedNotes(storedArchivedNotes);
   }, []);
+
+  // Save notes and archivedNotes to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('notes', JSON.stringify(notes));
+    localStorage.setItem('archivedNotes', JSON.stringify(archivedNotes));
+  }, [notes, archivedNotes]);
 
   const addNote = (note) => {
     const newId = notes.length > 0 ? Math.max(...notes.map(n => n.id)) + 1 : 1; 
     const newNote = { ...note, id: newId }; 
-    setNotes(prevNotes => [...prevNotes, newNote].sort((a, b) => a.id - b.id)); // Mengurutkan berdasarkan ID
+    setNotes(prevNotes => [...prevNotes, newNote].sort((a, b) => a.id - b.id));
   };
 
   const deleteNote = (index) => {
@@ -27,13 +34,13 @@ function App() {
 
   const archiveNote = (index) => {
     const noteToArchive = notes[index];
-    setArchivedNotes(prevArchived => [...prevArchived, noteToArchive].sort((a, b) => a.id - b.id)); // Mengurutkan saat diarsipkan
+    setArchivedNotes(prevArchived => [...prevArchived, noteToArchive].sort((a, b) => a.id - b.id));
     setNotes(prevNotes => prevNotes.filter((_, i) => i !== index));
   };
 
   const unarchiveNote = (index) => {
     const noteToUnarchive = archivedNotes[index];
-    setNotes(prevNotes => [...prevNotes, noteToUnarchive].sort((a, b) => a.id - b.id)); // Mengurutkan saat dikembalikan
+    setNotes(prevNotes => [...prevNotes, noteToUnarchive].sort((a, b) => a.id - b.id));
     setArchivedNotes(prevArchived => prevArchived.filter((_, i) => i !== index));
   };
 
@@ -56,10 +63,8 @@ function App() {
   return (
     <div className="app">
       <h1>Catatan</h1>
-
       <NoteForm addNote={addNote} />
 
-      {/* Search Bar */}
       <input
         type="text"
         placeholder="Cari catatan..."
